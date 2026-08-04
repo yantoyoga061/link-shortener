@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background-color: #f6f5f1;
+  background-image:
+    linear-gradient(#12151a0a 1px, transparent 1px),
+    linear-gradient(90deg, #12151a0a 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+::selection {
+  background-color: #e8b04b;
+  color: #12151a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
