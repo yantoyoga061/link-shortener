@@ -5,6 +5,15 @@ import { checkRateLimit } from "@/lib/rate-limit";
 
 const CODE_LENGTH = 6;
 const MAX_ATTEMPTS = 5;
+const ALIAS_PATTERN = /^[a-zA-Z0-9_-]{3,32}$/;
+const RESERVED_ALIASES = new Set([
+  "api",
+  "links",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+  "_next",
+]);
 
 function isValidUrl(value: string) {
   try {
@@ -13,6 +22,10 @@ function isValidUrl(value: string) {
   } catch {
     return false;
   }
+}
+
+function isValidAlias(alias: string) {
+  return ALIAS_PATTERN.test(alias) && !RESERVED_ALIASES.has(alias.toLowerCase());
 }
 
 function getClientIp(req: NextRequest) {
@@ -42,7 +55,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { url?: string };
+  let body: { url?: string; alias?: string };
   try {
     body = await req.json();
   } catch {
@@ -69,17 +82,40 @@ export async function POST(req: NextRequest) {
   }
 
   let code = "";
-  let attempts = 0;
-  do {
-    code = nanoid(CODE_LENGTH);
-    attempts += 1;
-    if (attempts > MAX_ATTEMPTS) {
+  const aliasRaw = body.alias?.trim();
+
+  if (aliasRaw) {
+    if (!isValidAlias(aliasRaw)) {
       return NextResponse.json(
-        { error: "Gagal membuat kode unik, coba lagi." },
-        { status: 500 }
+        {
+          error:
+            "Alias harus 3-32 karakter, hanya huruf, angka, - dan _ (tanpa spasi).",
+        },
+        { status: 400 }
       );
     }
-  } while (await codeExists(code));
+
+    if (await codeExists(aliasRaw)) {
+      return NextResponse.json(
+        { error: "Alias itu sudah dipakai. Coba yang lain." },
+        { status: 409 }
+      );
+    }
+
+    code = aliasRaw;
+  } else {
+    let attempts = 0;
+    do {
+      code = nanoid(CODE_LENGTH);
+      attempts += 1;
+      if (attempts > MAX_ATTEMPTS) {
+        return NextResponse.json(
+          { error: "Gagal membuat kode unik, coba lagi." },
+          { status: 500 }
+        );
+      }
+    } while (await codeExists(code));
+  }
 
   await saveLink(code, target);
 
