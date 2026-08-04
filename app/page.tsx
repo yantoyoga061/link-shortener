@@ -10,6 +10,8 @@ type Result = {
 
 export default function Home() {
   const [url, setUrl] = useState("");
+  const [alias, setAlias] = useState("");
+  const [showAlias, setShowAlias] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -26,7 +28,10 @@ export default function Home() {
       const res = await fetch("/api/shorten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({
+          url,
+          alias: alias.trim() ? alias.trim() : undefined,
+        }),
       });
       const data = await res.json();
 
@@ -115,7 +120,41 @@ export default function Home() {
               {loading ? "Memendekkan…" : "Pendekkan"}
             </button>
           </div>
+
+          {showAlias ? (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm text-ink/40 whitespace-nowrap">
+                {typeof window !== "undefined" ? window.location.host : ""}/
+              </span>
+              <input
+                type="text"
+                placeholder="nama-kustom-saya"
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                pattern="[a-zA-Z0-9_-]{3,32}"
+                maxLength={32}
+                className="flex-1 font-mono text-sm bg-paper border-2 border-ink/15 focus:border-wire outline-none rounded-lg px-3 py-2 placeholder:text-ink/30 transition-colors"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAlias(true)}
+              className="self-start font-mono text-xs text-ink/50 hover:text-wire underline underline-offset-2 transition-colors"
+            >
+              + pakai alias kustom
+            </button>
+          )}
         </form>
+
+        <div className="mt-3 text-center">
+          <a
+            href="/links"
+            className="font-mono text-xs text-ink/40 hover:text-wire underline underline-offset-2 transition-colors"
+          >
+            lihat semua link yang pernah dibuat →
+          </a>
+        </div>
 
         {error && (
           <div className="mt-4 font-mono text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
@@ -148,7 +187,7 @@ export default function Home() {
         )}
 
         <p className="mt-12 text-center font-mono text-xs text-ink/35">
-          v0.1 · satu halaman, dibuat untuk di-upscale
+          v0.2 · alias kustom &amp; riwayat publik
         </p>
       </div>
     </main>
